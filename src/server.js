@@ -8,6 +8,10 @@ import rateLimit from 'express-rate-limit';
 import { connectDB } from './config/db.js';
 import errorHandler from './middlewares/errorHandler.middleware.js';
 
+import userRoutes from './routes/user.router.js';
+import goalsRoutes from './routes/goals.router.js';
+import actionRoutes from './routes/action.router.js';
+
 dotenv.config();
 
 const app = express();
@@ -33,6 +37,10 @@ app.disable('x-powered-by');
 app.get('/', (req, res) => {
     res.send("Ruta principal de la API");
 });
+
+app.use('/api/users', userRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/actions', actionRoutes);
 
 app.use(errorHandler);
 
