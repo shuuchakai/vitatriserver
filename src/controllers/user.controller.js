@@ -1,31 +1,35 @@
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import nodemailer from 'nodemailer';
 
 import User from '../models/user.model.js';
+import createTransport from '../utils/createTransport.util.js';
+import validateEmail from '../utils/validateEmail.util.js';
+import validatePassword from '../utils/validatePassword.util.js';
 
 export const register = async (req, res) => {
     try {
+        const emailExists = await User.findOne({ email: req.body.email });
+        if (emailExists) {
+            return res.status(400).json({ message: 'Correo electrónico ya registrado' });
+        }
+
+        if (!validateEmail(req.body.email) || !validatePassword(req.body.password)) {
+            return res.status(400).json({ message: 'Correo electrónico no válido' });
+        }
+
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
-        const confirmToken = crypto.randomBytes(20).toString('hex');
+        const confirmToken = Math.floor(100000 + Math.random() * 900000).toString();
         const user = new User({ ...req.body, id: uuidv4(), password: hashedPassword, emailConfirmToken: confirmToken });
         await user.save();
 
-        const transporter = nodemailer.createTransport({
-            service: 'hotmail',
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-        });
+        const transporter = createTransport();
 
         const mailOptions = {
             to: user.email,
             from: process.env.EMAIL_USERNAME,
             subject: 'Confirmación de correo electrónico',
-            text: `Por favor, confirma tu correo electrónico haciendo clic en el siguiente enlace, o pegándolo en tu navegador:\n\nhttp://${req.headers.host}/confirm/${confirmToken}`,
+            text: `Tu código de confirmación es: ${confirmToken}. Por favor, ingresa este código en la aplicación para confirmar tu correo electrónico.`,
         };
 
         await transporter.sendMail(mailOptions);
@@ -38,17 +42,16 @@ export const register = async (req, res) => {
 
 export const confirmEmail = async (req, res) => {
     try {
-        const user = await User.findOne({ emailConfirmToken: req.params.token });
-        if (!user) {
-            return res.status(400).json({ message: 'Token de confirmación de correo electrónico no válido' });
+        const user = await User.findOne({ email: req.body.email });
+        if (!user || user.emailConfirmToken !== req.body.token) {
+            return res.status(400).json({ message: 'Token de confirmación inválido' });
         }
 
         user.isEmailConfirmed = true;
-        user.emailConfirmToken = null;
-
+        user.emailConfirmToken = undefined;
         await user.save();
 
-        res.json({ message: 'Correo electrónico confirmado con éxito' });
+        res.json({ message: 'Correo electrónico confirmado' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -66,6 +69,16 @@ export const login = async (req, res) => {
         }
 
         const token = jwt.sign({ _id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const transporter = createTransport();
+        const mailOptions = {
+            to: user.email,
+            from: process.env.EMAIL_USERNAME,
+            subject: 'Notificación de inicio de sesión',
+            text: `Se ha iniciado sesión en tu cuenta desde el dispositivo ${req.headers['user-agent']}. Si no reconoces este inicio de sesión, por favor, informa de ello.`,
+        };
+        await transporter.sendMail(mailOptions);
+
         res.json({ token, user });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -79,25 +92,19 @@ export const forgotPassword = async (req, res) => {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        const resetToken = crypto.randomBytes(20).toString('hex');
+        const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
         user.resetPasswordToken = resetToken;
         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
         await user.save();
 
-        const transporter = nodemailer.createTransport({
-            service: 'hotmail',
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-        });
+        const transporter = createTransport();
 
         const mailOptions = {
             to: user.email,
             from: process.env.EMAIL_USERNAME,
             subject: 'Restablecimiento de contraseña',
-            text: `Has solicitado el restablecimiento de tu contraseña. Por favor, haz clic en el siguiente enlace, o pega esto en tu navegador para completar el proceso:\n\nhttp://${req.headers.host}/reset-password/${resetToken}\n\nSi no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.`,
+            text: `Has solicitado el restablecimiento de tu contraseña. Tu código de restablecimiento es: ${resetToken}. Por favor, ingresa este código en la aplicación para completar el proceso.\n\nSi no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.`,
         };
 
         await transporter.sendMail(mailOptions);
@@ -144,6 +151,22 @@ export const updatePassword = async (req, res) => {
         await user.save();
 
         res.json({ message: 'Contraseña actualizada con éxito' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        const userWithoutPassword = user.toObject();
+        delete userWithoutPassword.password;
+
+        res.json(userWithoutPassword);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

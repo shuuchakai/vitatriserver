@@ -9,8 +9,8 @@ import { connectDB } from './config/db.js';
 import errorHandler from './middlewares/errorHandler.middleware.js';
 
 import userRoutes from './routes/user.router.js';
-import goalsRoutes from './routes/goals.router.js';
-import actionRoutes from './routes/action.router.js';
+// import goalsRoutes from './routes/goals.router.js';
+// import actionRoutes from './routes/action.router.js';
 
 dotenv.config();
 
@@ -39,8 +39,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/users', userRoutes);
-app.use('/api/goals', goalsRoutes);
-app.use('/api/actions', actionRoutes);
+// app.use('/api/goals', goalsRoutes);
+// app.use('/api/actions', actionRoutes);
 
 app.use(errorHandler);
 
