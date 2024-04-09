@@ -14,8 +14,12 @@ export const register = async (req, res) => {
             return res.status(400).json({ message: 'Correo electrónico ya registrado' });
         }
 
-        if (!validateEmail(req.body.email) || !validatePassword(req.body.password)) {
+        if (!validateEmail(req.body.email)) {
             return res.status(400).json({ message: 'Correo electrónico no válido' });
+        }
+
+        if (!validatePassword(req.body.password)) {
+            return res.status(400).json({ message: 'Contraseña no válida' });
         }
 
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
@@ -51,12 +55,24 @@ export const confirmEmail = async (req, res) => {
         user.emailConfirmToken = undefined;
         await user.save();
 
-        res.json({ message: 'Correo electrónico confirmado' });
+        const transporter = createTransport();
+
+        const mailOptions = {
+            to: user.email,
+            from: process.env.EMAIL_USERNAME,
+            subject: 'Correo electrónico confirmado',
+            text: 'Tu correo electrónico ha sido verificado correctamente.',
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        const token = jwt.sign({ _id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ message: 'Correo electrónico confirmado', token, user });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
 export const login = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
@@ -117,7 +133,7 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
     try {
-        const user = await User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } });
+        const user = await User.findOne({ resetPasswordToken: req.body.token });
         if (!user) {
             return res.status(400).json({ message: 'Token de restablecimiento de contraseña no válido o expirado' });
         }
@@ -158,7 +174,7 @@ export const updatePassword = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user = await User.findOne(req.user.email);
         if (!user) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
@@ -167,6 +183,21 @@ export const getUserProfile = async (req, res) => {
         delete userWithoutPassword.password;
 
         res.json(userWithoutPassword);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const deleteAccount = async (req, res) => {
+    try {
+        const user = await User.findOne(req.user.email);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        await User.findOneAndDelete(req.user.email);
+
+        res.json({ message: 'Cuenta eliminada con éxito' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
