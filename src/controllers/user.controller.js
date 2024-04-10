@@ -40,7 +40,7 @@ export const register = async (req, res) => {
 
         res.status(201).json({ user });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: error });
     }
 };
 
@@ -73,6 +73,7 @@ export const confirmEmail = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 export const login = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
