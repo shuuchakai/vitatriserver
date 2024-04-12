@@ -62,9 +62,9 @@ export const confirmEmail = async (req, res) => {
         user.isEmailConfirmed = true;
         user.emailConfirmToken = undefined;
         await user.save();
-
+        
         const transporter = createTransport();
-
+    
         const mailOptions = {
             to: user.email,
             from: process.env.EMAIL_USERNAME,
@@ -102,7 +102,7 @@ export const login = async (req, res) => {
         }
 
         const token = jwt.sign({ _id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+        /* 
         const transporter = createTransport();
         const mailOptions = {
             to: user.email,
@@ -119,6 +119,7 @@ export const login = async (req, res) => {
                 }
             })
         })
+        */
 
         res.json({ token, user });
     } catch (error) {
