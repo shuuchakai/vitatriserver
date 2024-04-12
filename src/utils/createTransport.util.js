@@ -12,7 +12,8 @@ const createTransport = () => {
         tls: {
             // No specific ciphers necessary
             rejectUnauthorized: true
-        }
+        },
+        logger: true
     });
 };
 
