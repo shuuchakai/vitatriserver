@@ -5,6 +5,9 @@ const createTransport = () => {
         service: 'hotmail',
         secure: false,
         host: 'smtp.office365.com',
+        tls: {
+            ciphers: "SSLv3",
+        },
         port: 587,
         auth: {
             user: process.env.EMAIL_USERNAME,
