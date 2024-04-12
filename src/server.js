@@ -9,6 +9,7 @@ import { connectDB } from './config/db.js';
 import errorHandler from './middlewares/errorHandler.middleware.js';
 
 import userRoutes from './routes/user.router.js';
+import questionRoutes from './routes/questions.router.js';
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/users', userRoutes);
+app.use('/api/questions', questionRoutes);
 
 app.use(errorHandler);
 
