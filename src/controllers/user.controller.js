@@ -24,7 +24,7 @@ export const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         const confirmToken = Math.floor(100000 + Math.random() * 900000).toString();
-        const user = new User({ ...req.body, id: uuidv4(), password: hashedPassword, emailConfirmToken: confirmToken });
+        const user = new User({ ...req.body, id: uuidv4(), password: hashedPassword, emailConfirmToken: confirmToken, isEmailConfirmed: true });
         await user.save();
 /*
         const transporter = createTransport();
