@@ -36,7 +36,15 @@ export const register = async (req, res) => {
             text: `Tu código de confirmación es: ${confirmToken}. Por favor, ingresa este código en la aplicación para confirmar tu correo electrónico.`,
         };
 
-        await transporter.sendMail(mailOptions);
+        await new Promise((resolve, reject) => {
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(info);
+                }
+            })
+        })
 
         res.status(201).json({ user });
     } catch (error) {
@@ -64,7 +72,15 @@ export const confirmEmail = async (req, res) => {
             text: 'Tu correo electrónico ha sido verificado correctamente.',
         };
 
-        await transporter.sendMail(mailOptions);
+        await new Promise((resolve, reject) => {
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(info);
+                }
+            })
+        })
 
         const token = jwt.sign({ _id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
@@ -94,7 +110,15 @@ export const login = async (req, res) => {
             subject: 'Notificación de inicio de sesión',
             text: `Se ha iniciado sesión en tu cuenta desde el dispositivo ${req.headers['user-agent']}. Si no reconoces este inicio de sesión, por favor, informa de ello.`,
         };
-        await transporter.sendMail(mailOptions);
+        await new Promise((resolve, reject) => {
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(info);
+                }
+            })
+        })
 
         res.json({ token, user });
     } catch (error) {
