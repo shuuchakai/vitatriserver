@@ -20,12 +20,6 @@ const PORT = process.env.PORT;
 
 app.use(helmet());
 
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100
-});
-app.use(limiter);
-
 app.use(cors(
     {
         origin: '*',
@@ -34,7 +28,6 @@ app.use(cors(
 ));
 app.use(morgan('dev'));
 app.use(express.json());
-app.disable('x-powered-by');
 
 app.get('/', (req, res) => {
     res.send("Ruta principal de la API");

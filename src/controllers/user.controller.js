@@ -24,34 +24,35 @@ export const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         const confirmToken = Math.floor(100000 + Math.random() * 900000).toString();
-        const user = new User({ ...req.body, id: uuidv4(), password: hashedPassword, emailConfirmToken: confirmToken });
+        const user = new User({ ...req.body, id: uuidv4(), password: hashedPassword, emailConfirmToken: confirmToken, isEmailConfirmed: true });
         await user.save();
-
-        const transporter = createTransport();
-
-        const mailOptions = {
-            to: user.email,
-            from: process.env.EMAIL_USERNAME,
-            subject: 'Confirmación de correo electrónico',
-            text: `Tu código de confirmación es: ${confirmToken}. Por favor, ingresa este código en la aplicación para confirmar tu correo electrónico.`,
-        };
-
-        await new Promise((resolve, reject) => {
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(info);
-                }
-            })
-        })
-
+        /*
+                const transporter = createTransport();
+        
+                const mailOptions = {
+                    to: user.email,
+                    from: process.env.EMAIL_USERNAME,
+                    subject: 'Confirmación de correo electrónico',
+                    text: `Tu código de confirmación es: ${confirmToken}. Por favor, ingresa este código en la aplicación para confirmar tu correo electrónico.`,
+                };
+        
+                await new Promise((resolve, reject) => {
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(info);
+                        }
+                    })
+                })
+        
+        */
         res.status(201).json({ user });
     } catch (error) {
         res.status(400).json({ message: error });
     }
 };
-
+/*
 export const confirmEmail = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
@@ -62,9 +63,9 @@ export const confirmEmail = async (req, res) => {
         user.isEmailConfirmed = true;
         user.emailConfirmToken = undefined;
         await user.save();
-
+        
         const transporter = createTransport();
-
+    
         const mailOptions = {
             to: user.email,
             from: process.env.EMAIL_USERNAME,
@@ -89,7 +90,7 @@ export const confirmEmail = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
+*/
 export const login = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
@@ -102,7 +103,7 @@ export const login = async (req, res) => {
         }
 
         const token = jwt.sign({ _id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+        /* 
         const transporter = createTransport();
         const mailOptions = {
             to: user.email,
@@ -119,7 +120,7 @@ export const login = async (req, res) => {
                 }
             })
         })
-
+        */
         res.json({ token, user });
     } catch (error) {
         res.status(500).json({ message: error.message });
